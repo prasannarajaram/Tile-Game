@@ -1,0 +1,27 @@
+<HTML>
+    <head>
+    <title>Tile Game</title>
+    <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <h1>21 Tile Game</h1>
+        <div class="game-container">
+
+            <div class="board-container">
+                <div id="board"></div>
+            </div>
+
+            <div class="controls-container">
+                <button id="btn1" onclick="takeTiles(1)">Take 1</button>
+                <button id="btn2" onclick="takeTiles(2)">Take 2</button>
+                <button id="btn3" onclick="takeTiles(3)">Take 3</button>
+                <button id="btn4" onclick="takeTiles(4)">Take 4</button>
+            </div>
+
+        </div>
+        <p id="status"></p>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="script.js"></script>
+        <script src="script.js"></script>
+    </body>
+</HTML>
