@@ -17,6 +17,18 @@ let tiles;
 let currentPlayer;
 let gameOver;
 
+let myPlayerNumber  = 0;
+
+socket.on("playerAssignment", (playerNumber) => {
+
+  myPlayerNumber = playerNumber;
+
+  document.getElementById("player-info").innerText =
+    myPlayerNumber === 0
+      ? "You are a Spectator"
+      : `You are Player ${myPlayerNumber}`;
+});
+
 function renderTiles() {
   const board = document.getElementById("board");
 
@@ -43,6 +55,18 @@ function renderTiles() {
     document.getElementById("status").innerText =
     `Tiles remaining: ${tiles} | Player ${currentPlayer}'s turn`;
   }
+  const myTurn = myPlayerNumber === currentPlayer;
+  document.getElementById("btn1").disabled =
+    !myTurn || tiles < 1;
+
+  document.getElementById("btn2").disabled =
+    !myTurn || tiles < 2;
+
+  document.getElementById("btn3").disabled =
+    !myTurn || tiles < 3;
+
+  document.getElementById("btn4").disabled =
+    !myTurn || tiles < 4;
 }
 
 function takeTiles(amount) {
@@ -69,11 +93,9 @@ function takeTiles(amount) {
 }
 
 function resetGame() {
-    console.log("Reset Clicked");
-    tiles = 21;
-    currentPlayer = 1;
-    gameOver = false;
-    renderTiles()
+  socket.emit("resetGame");
 }
+
+
 
 renderTiles();
