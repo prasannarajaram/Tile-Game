@@ -1,61 +1,120 @@
+// --------------------------------------------------
+// Connect browser to Socket.IO server
+// --------------------------------------------------
 const socket = io();
 
-socket.on("connect", () => {
-  console.log("Connected to server");
-});
 
-socket.on("gameState", (state) => {
-
-  tiles = state.tiles;
-  currentPlayer = state.currentPlayer;
-  gameOver = state.gameOver;
-
-  renderTiles();
-});
-
+// --------------------------------------------------
+// Local client-side copy of shared game state
+//
+// NOTE:
+// Server owns the true state.
+// Client only renders received state.
+// --------------------------------------------------
 let tiles;
 let currentPlayer;
 let gameOver;
 
-let myPlayerNumber  = 0;
 
+// --------------------------------------------------
+// Player identity assigned by server
+//
+// 1 = Player 1
+// 2 = Player 2
+// 0 = Spectator
+// --------------------------------------------------
+let myPlayerNumber = 0;
+
+
+// --------------------------------------------------
+// Runs when browser successfully connects to server
+// --------------------------------------------------
+socket.on("connect", () => {
+  console.log("Connected to server");
+});
+
+
+// --------------------------------------------------
+// Receive assigned player number from server
+// --------------------------------------------------
 socket.on("playerAssignment", (playerNumber) => {
 
   myPlayerNumber = playerNumber;
 
+  // Update UI with player identity
   document.getElementById("player-info").innerText =
     myPlayerNumber === 0
       ? "You are a Spectator"
       : `You are Player ${myPlayerNumber}`;
 });
 
+
+// --------------------------------------------------
+// Receive updated game state from server
+//
+// This is the main synchronization mechanism.
+// Every connected browser receives same state.
+// --------------------------------------------------
+socket.on("gameState", (state) => {
+
+  // Update local variables
+  tiles = state.tiles;
+  currentPlayer = state.currentPlayer;
+  gameOver = state.gameOver;
+
+  // Re-render UI
+  renderTiles();
+});
+
+
+// --------------------------------------------------
+// Render game board and UI
+// --------------------------------------------------
 function renderTiles() {
+
   const board = document.getElementById("board");
 
+  // Clear previous board
   board.innerHTML = "";
 
+
+  // Create tile elements
   for (let i = 0; i < tiles; i++) {
+
     const tile = document.createElement("div");
+
     tile.classList.add("tile");
+
     board.appendChild(tile);
   }
-  document.getElementById("btn1").disabled = tiles < 1;
-  document.getElementById("btn2").disabled = tiles < 2;
-  document.getElementById("btn3").disabled = tiles < 3;
-  document.getElementById("btn4").disabled = tiles < 4;
 
-  if (gameOver){
+
+  // ------------------------------------------------
+  // Update status message
+  // ------------------------------------------------
+  if (gameOver) {
+
     document.getElementById("status").innerHTML =
-    `
-    Player ${currentPlayer}'s wins
-    <br><br>
-    <button onclick="resetGame()">Reset Board</button>
-    `;
+      `
+      Player ${currentPlayer} wins
+      <br><br>
+      <button onclick="resetGame()">Reset Board</button>
+      `;
+
   } else {
+
     document.getElementById("status").innerText =
-    `Tiles remaining: ${tiles} | Player ${currentPlayer}'s turn`;
+      `Tiles remaining: ${tiles} | Player ${currentPlayer}'s turn`;
   }
+
+
+  // ------------------------------------------------
+  // Enable buttons only:
+  // - during player's own turn
+  // - if enough tiles remain
+  // ------------------------------------------------
   const myTurn = myPlayerNumber === currentPlayer;
+
   document.getElementById("btn1").disabled =
     !myTurn || tiles < 1;
 
@@ -69,33 +128,30 @@ function renderTiles() {
     !myTurn || tiles < 4;
 }
 
+
+// --------------------------------------------------
+// Send tile-taking request to server
+//
+// IMPORTANT:
+// Client does NOT directly modify state.
+// Server validates and updates state.
+// --------------------------------------------------
 function takeTiles(amount) {
 
-    if (gameOver) {
-        return;
-    }
-
-  if (amount > tiles) {
+  // Ignore invalid clicks after game end
+  if (gameOver) {
     return;
   }
 
+  // Send move request to server
   socket.emit("takeTiles", amount);
-
-  renderTiles();
-
-  if (tiles === 0) {
-    gameOver = true;
-    renderTiles();
-    return;
-  }
-  currentPlayer = currentPlayer === 1 ? 2 : 1;
-  renderTiles();
 }
 
+
+// --------------------------------------------------
+// Request server to reset shared game
+// --------------------------------------------------
 function resetGame() {
+
   socket.emit("resetGame");
 }
-
-
-
-renderTiles();
